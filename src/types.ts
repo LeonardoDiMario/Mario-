@@ -57,6 +57,8 @@ import { SupportedLanguage } from './utils/i18n';
 
 export interface UserPreferences {
   language: SupportedLanguage;
+  /** UI compatibility only. Backend language selection uses profiles.language. */
+  botLanguage?: SupportedLanguage;
   theme: 'telegram-dark' | 'telegram-light' | 'cyberpunk' | 'velvet';
   userPersona: UserPersona;
   rpStyle: 'narrative' | 'dialogue_only' | 'descriptive';
