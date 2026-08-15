@@ -9,7 +9,7 @@ export interface Character {
   avatar: string;
   category: CharacterCategory;
   personality: string;
-  background: string; // Used as 'about' / 'backstory'
+  background: string;
   about?: string;
   backstory?: string;
   greeting: string;
@@ -57,7 +57,6 @@ import { SupportedLanguage } from './utils/i18n';
 
 export interface UserPreferences {
   language: SupportedLanguage;
-  botLanguage?: SupportedLanguage;
   theme: 'telegram-dark' | 'telegram-light' | 'cyberpunk' | 'velvet';
   userPersona: UserPersona;
   rpStyle: 'narrative' | 'dialogue_only' | 'descriptive';
@@ -71,8 +70,8 @@ export interface UserPreferences {
 
 export interface UserRelationship {
   characterId: string;
-  level: number; // 1 - 10
-  affectionPoints: number; // 0 - 100 per level
+  level: number;
+  affectionPoints: number;
   statusTitle: string;
   unlockedLore: string[];
 }
