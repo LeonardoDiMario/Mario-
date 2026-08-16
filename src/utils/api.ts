@@ -4,7 +4,7 @@ const RUBYCHAN_API_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/
 const RUBYCHAN_SETTINGS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-settings-v2';
 const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-rewards-v2';
 const RUBYCHAN_BALANCE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api-balance';
-const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-chat-resilient';
+const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-chat-resilient-v2';
 const RUBYCHAN_SPEND_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-spend-energy';
 const RUBYCHAN_IMAGE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-image-generate-v5';
 
