@@ -4,6 +4,7 @@ const RUBYCHAN_API_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/
 const RUBYCHAN_SETTINGS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-settings';
 const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-rewards-v2';
 const RUBYCHAN_BALANCE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api-balance';
+const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-chat-v2';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
@@ -54,27 +55,34 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   headers.set('x-telegram-user-info', JSON.stringify(user.info));
 
   const method = (options.method || 'GET').toUpperCase();
-  const isSettingsWrite = url === '/api/preferences' && method === 'POST';
+  const isSettingsRoute = url === '/api/preferences';
   const isDailyClaim = url === '/api/user/claim-daily' && method === 'POST';
   const isDailyStatus = url === '/api/user/profile' && method === 'GET';
-  const target = isSettingsWrite
-    ? RUBYCHAN_SETTINGS_URL
+  const isChatSend = url === '/api/chat/send' && method === 'POST';
+
+  const target = isSettingsRoute
+    ? `${RUBYCHAN_SETTINGS_URL}`
     : isDailyClaim
       ? `${RUBYCHAN_REWARDS_URL}?route=claim-daily`
       : isDailyStatus
         ? `${RUBYCHAN_BALANCE_URL}?route=status`
-        : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
+        : isChatSend
+          ? `${RUBYCHAN_CHAT_URL}`
+          : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
 
   const res = await fetch(target, { ...options, headers });
 
   // Every successful WebApp chat message spends exactly 1 Energy on the server.
-  if (url === '/api/chat/send' && method === 'POST') {
+  if (isChatSend) {
     try {
       const data = await res.clone().json();
       if (data?.success) {
         const spent = await fetch(`${RUBYCHAN_BALANCE_URL}?route=spend`, {
           method: 'POST',
-          headers: { 'x-telegram-user-id': user.id, 'x-telegram-user-info': JSON.stringify(user.info) }
+          headers: {
+            'x-telegram-user-id': user.id,
+            'x-telegram-user-info': JSON.stringify(user.info)
+          }
         });
         const spendData = await spent.json().catch(() => ({}));
         if (!spendData?.success) {
