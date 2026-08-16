@@ -74,8 +74,6 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
 
   const response = await fetch(target, { ...options, headers });
 
-  // A successful Gemini chat consumes exactly 1 Energy on the server.
-  // Do this only after the chat endpoint succeeds so failed generations do not charge the user.
   if (isChatSend && response.ok) {
     try {
       const spend = await fetch(RUBYCHAN_SPEND_URL, {
@@ -86,16 +84,11 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
           'x-telegram-user-info': JSON.stringify(user.info)
         }
       });
-      if (!spend.ok) {
-        console.warn('Energy spend failed after successful chat:', await spend.text());
-      }
+      if (!spend.ok) console.warn('Energy spend failed after successful chat:', await spend.text());
     } catch (err) {
       console.warn('Energy spend request failed:', err);
     }
 
-    // Every successful message asks the server whether this is a good moment
-    // for a contextual image. The server decides randomly within five messages,
-    // boosts romance/emotional moments, and forces an image by message five.
     try {
       const payload = options.body && typeof options.body === 'string' ? JSON.parse(options.body) : {};
       const characterId = String(payload.characterId || '');
@@ -103,6 +96,8 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
         const controller = new AbortController();
         const timeout = window.setTimeout(() => controller.abort(), 30000);
         try {
+          // Server decides the random 1–5 message trigger, romance priority,
+          // full-conversation summary, and fal.ai generation.
           await fetch(RUBYCHAN_IMAGE_URL, {
             method: 'POST',
             signal: controller.signal,
@@ -118,7 +113,6 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
         }
       }
     } catch (err) {
-      // Image generation must never block or fail the user's text chat.
       console.warn('Contextual image generation skipped/failed:', err);
     }
   }
