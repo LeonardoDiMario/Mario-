@@ -1,11 +1,12 @@
 // Resolve character avatar API endpoints to real image URLs and recover broken remote images.
-// Nekos.best provides direct anime image URLs in its JSON response and documents a high request limit.
+// Nekos.best documents waifu/husbando image endpoints with direct image URLs in the JSON response.
 
-const AVATAR_API = 'https://nekos.best/api/v2/waifu';
+const WAIFU_API = 'https://nekos.best/api/v2/waifu';
+const HUSBANDO_API = 'https://nekos.best/api/v2/husbando';
 
-async function fetchWaifuUrl(): Promise<string | null> {
+async function fetchAnimeUrl(kind: 'waifu' | 'husbando'): Promise<string | null> {
   try {
-    const response = await fetch(AVATAR_API, {
+    const response = await fetch(kind === 'husbando' ? HUSBANDO_API : WAIFU_API, {
       headers: { Accept: 'application/json' },
       cache: 'no-store'
     });
@@ -16,6 +17,10 @@ async function fetchWaifuUrl(): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+function avatarKindFromSrc(src: string): 'waifu' | 'husbando' {
+  return src.includes('/husbando') ? 'husbando' : 'waifu';
 }
 
 function isCharacterAvatarImage(img: HTMLImageElement): boolean {
@@ -37,7 +42,11 @@ function isCharacterAvatarImage(img: HTMLImageElement): boolean {
     alt.includes('seraphine') ||
     alt.includes('scarlett') ||
     alt.includes('aria') ||
-    alt.includes('may lin')
+    alt.includes('may lin') ||
+    alt.includes('dante') ||
+    alt.includes('kaelen') ||
+    alt.includes('julian') ||
+    alt.includes('zack')
   );
 }
 
@@ -45,7 +54,8 @@ async function recoverBrokenAvatar(img: HTMLImageElement) {
   if (img.dataset.rubyAvatarFallback === '1') return;
   img.dataset.rubyAvatarFallback = '1';
 
-  const fallbackUrl = await fetchWaifuUrl();
+  const kind = avatarKindFromSrc(img.currentSrc || img.src || '');
+  const fallbackUrl = await fetchAnimeUrl(kind);
   if (fallbackUrl) {
     img.dataset.rubyAvatarResolved = '1';
     img.src = fallbackUrl;
@@ -65,11 +75,12 @@ document.addEventListener('error', (event) => {
 // Convert our API-style character avatar values into actual image URLs.
 async function resolveApiAvatar(img: HTMLImageElement) {
   const src = img.getAttribute('src') || '';
-  if (!src.startsWith(AVATAR_API)) return;
+  if (!src.startsWith('https://nekos.best/api/v2/')) return;
   if (img.dataset.rubyAvatarResolved === '1') return;
 
   img.dataset.rubyAvatarResolved = '1';
-  const url = await fetchWaifuUrl();
+  const kind = avatarKindFromSrc(src);
+  const url = await fetchAnimeUrl(kind);
   if (url) img.src = url;
 }
 
