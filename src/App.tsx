@@ -232,7 +232,7 @@ export default function App() {
     }
 
     if (launchTelegram) {
-      const telegramBotUrl = `https://t.me/Rubby_Chan_Bot?start=char_${encodeURIComponent(char.id)}`;
+      const telegramBotUrl = `https://t.me/RubbyChanbot?start=char_${encodeURIComponent(char.id)}`;
       triggerHaptic('heavy');
 
       if (window.Telegram?.WebApp) {
@@ -412,7 +412,7 @@ export default function App() {
         fetchCharacters();
       }
     } catch (err) {
-      console.error('Error creating custom character:', err);
+      console.error('Error creating character:', err);
     }
   };
 
