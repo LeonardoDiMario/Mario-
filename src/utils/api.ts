@@ -75,7 +75,25 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
             ? RUBYCHAN_IMAGE_URL
             : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
 
-  return fetch(target, { ...options, headers });
+  const response = await fetch(target, { ...options, headers });
+
+  if (isChatSend && response.ok) {
+    try {
+      const spend = await fetch(RUBYCHAN_SPEND_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-telegram-user-id': user.id,
+          'x-telegram-user-info': JSON.stringify(user.info)
+        }
+      });
+      if (!spend.ok) console.warn('Energy spend failed after successful chat:', await spend.text());
+    } catch (err) {
+      console.warn('Energy spend request failed:', err);
+    }
+  }
+
+  return response;
 }
 
 export async function claimDailyBonus(): Promise<Response> {
