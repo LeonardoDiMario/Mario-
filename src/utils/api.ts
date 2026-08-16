@@ -1,6 +1,7 @@
 import { getTelegramUser } from './telegramSdk';
 
 const RUBYCHAN_API_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api';
+const RUBYCHAN_SETTINGS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-settings';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
@@ -41,10 +42,6 @@ function getWebUserIdentity() {
   };
 }
 
-/**
- * GitHub Pages has no Node/Express runtime. All app API calls therefore go
- * through the RubyChan Supabase Edge Function, which owns Gemini server-side.
- */
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const user = getWebUserIdentity();
   const headers = new Headers(options.headers || {});
@@ -56,7 +53,11 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   headers.set('x-telegram-user-id', user.id);
   headers.set('x-telegram-user-info', JSON.stringify(user.info));
 
-  const target = `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
+  const isSettingsWrite = url === '/api/preferences' && (options.method || 'GET').toUpperCase() === 'POST';
+  const target = isSettingsWrite
+    ? RUBYCHAN_SETTINGS_URL
+    : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
+
   return fetch(target, { ...options, headers });
 }
 
