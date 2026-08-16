@@ -48,10 +48,13 @@ jobs:
         run: |
           test -f owner.html
           test -f owner-live.html
+          test -f owner-history.html
           cp owner.html dist/owner.html
           cp owner-live.html dist/owner-live.html
+          cp owner-history.html dist/owner-history.html
           test -f dist/owner.html
           test -f dist/owner-live.html
+          test -f dist/owner-history.html
           ls -lh dist/owner*.html
 
       - name: Setup Pages
