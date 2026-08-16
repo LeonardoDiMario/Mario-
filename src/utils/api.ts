@@ -4,24 +4,13 @@ const RUBYCHAN_API_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/
 const RUBYCHAN_SETTINGS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-settings';
 const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-rewards-v2';
 const RUBYCHAN_BALANCE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api-balance';
-const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-chat-v2';
+const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-chat-persona';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
   if (tgUser?.id) {
-    return {
-      id: String(tgUser.id),
-      info: {
-        id: tgUser.id,
-        first_name: tgUser.first_name || 'Telegram User',
-        last_name: tgUser.last_name || '',
-        username: tgUser.username || `tg_${tgUser.id}`,
-        photo_url: tgUser.photo_url || '',
-        language_code: tgUser.language_code || ''
-      }
-    };
+    return { id: String(tgUser.id), info: { id: tgUser.id, first_name: tgUser.first_name || 'Telegram User', last_name: tgUser.last_name || '', username: tgUser.username || `tg_${tgUser.id}`, photo_url: tgUser.photo_url || '', language_code: tgUser.language_code || '' } };
   }
-
   let webUserId = localStorage.getItem('rubychan_web_user_id');
   let webUserName = localStorage.getItem('rubychan_web_user_name');
   if (!webUserId) {
@@ -31,26 +20,13 @@ function getWebUserIdentity() {
     localStorage.setItem('rubychan_web_user_id', webUserId);
     localStorage.setItem('rubychan_web_user_name', webUserName);
   }
-
-  return {
-    id: webUserId,
-    info: {
-      id: webUserId,
-      first_name: webUserName || 'Web Visitor',
-      last_name: '(Web App)',
-      username: webUserName || `Web_${webUserId.slice(-4)}`,
-      photo_url: '',
-      language_code: ''
-    }
-  };
+  return { id: webUserId, info: { id: webUserId, first_name: webUserName || 'Web Visitor', last_name: '(Web App)', username: webUserName || `Web_${webUserId.slice(-4)}`, photo_url: '', language_code: '' } };
 }
 
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const user = getWebUserIdentity();
   const headers = new Headers(options.headers || {});
-  if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
-    headers.set('Content-Type', 'application/json');
-  }
+  if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') headers.set('Content-Type', 'application/json');
   headers.set('x-telegram-user-id', user.id);
   headers.set('x-telegram-user-info', JSON.stringify(user.info));
 
@@ -61,45 +37,16 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   const isChatSend = url === '/api/chat/send' && method === 'POST';
 
   const target = isSettingsRoute
-    ? `${RUBYCHAN_SETTINGS_URL}`
+    ? RUBYCHAN_SETTINGS_URL
     : isDailyClaim
       ? `${RUBYCHAN_REWARDS_URL}?route=claim-daily`
       : isDailyStatus
         ? `${RUBYCHAN_BALANCE_URL}?route=status`
         : isChatSend
-          ? `${RUBYCHAN_CHAT_URL}`
+          ? RUBYCHAN_CHAT_URL
           : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
 
-  const res = await fetch(target, { ...options, headers });
-
-  // Every successful WebApp chat message spends exactly 1 Energy on the server.
-  if (isChatSend) {
-    try {
-      const data = await res.clone().json();
-      if (data?.success) {
-        const spent = await fetch(`${RUBYCHAN_BALANCE_URL}?route=spend`, {
-          method: 'POST',
-          headers: {
-            'x-telegram-user-id': user.id,
-            'x-telegram-user-info': JSON.stringify(user.info)
-          }
-        });
-        const spendData = await spent.json().catch(() => ({}));
-        if (!spendData?.success) {
-          return new Response(JSON.stringify({
-            success: false,
-            error: spendData?.reason === 'INSUFFICIENT_ENERGY' ? 'Not enough Energy.' : 'Energy update failed.'
-          }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-        }
-        data.energy = spendData.energy;
-        return new Response(JSON.stringify(data), { status: res.status, headers: { 'Content-Type': 'application/json' } });
-      }
-    } catch (err) {
-      console.error('Energy sync failed:', err);
-    }
-  }
-
-  return res;
+  return fetch(target, { ...options, headers });
 }
 
 export async function claimDailyBonus(): Promise<Response> {
