@@ -6,6 +6,7 @@ const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions
 const RUBYCHAN_BALANCE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api-balance';
 const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-web-chat-lite-v3';
 const RUBYCHAN_SPEND_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-spend-energy';
+const RUBYCHAN_IMAGE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-image-generate-v5';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
@@ -60,6 +61,7 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   const isDailyClaim = url === '/api/user/claim-daily' && method === 'POST';
   const isDailyStatus = url === '/api/user/profile' && method === 'GET';
   const isChatSend = url === '/api/chat/send' && method === 'POST';
+  const isImageGenerate = url === '/api/image/generate' && method === 'POST';
 
   const target = isSettingsRoute
     ? RUBYCHAN_SETTINGS_URL
@@ -69,27 +71,11 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
         ? `${RUBYCHAN_BALANCE_URL}?route=status`
         : isChatSend
           ? RUBYCHAN_CHAT_URL
-          : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
+          : isImageGenerate
+            ? RUBYCHAN_IMAGE_URL
+            : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
 
-  const response = await fetch(target, { ...options, headers });
-
-  if (isChatSend && response.ok) {
-    try {
-      const spend = await fetch(RUBYCHAN_SPEND_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-telegram-user-id': user.id,
-          'x-telegram-user-info': JSON.stringify(user.info)
-        }
-      });
-      if (!spend.ok) console.warn('Energy spend failed after successful chat:', await spend.text());
-    } catch (err) {
-      console.warn('Energy spend request failed:', err);
-    }
-  }
-
-  return response;
+  return fetch(target, { ...options, headers });
 }
 
 export async function claimDailyBonus(): Promise<Response> {
