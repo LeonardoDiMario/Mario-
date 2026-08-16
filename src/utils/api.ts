@@ -61,6 +61,7 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   const isDailyClaim = url === '/api/user/claim-daily' && method === 'POST';
   const isDailyStatus = url === '/api/user/profile' && method === 'GET';
   const isChatSend = url === '/api/chat/send' && method === 'POST';
+  const isImageGenerate = url === '/api/image/generate' && method === 'POST';
 
   const target = isSettingsRoute
     ? RUBYCHAN_SETTINGS_URL
@@ -70,7 +71,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
         ? `${RUBYCHAN_BALANCE_URL}?route=status`
         : isChatSend
           ? RUBYCHAN_CHAT_URL
-          : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
+          : isImageGenerate
+            ? RUBYCHAN_IMAGE_URL
+            : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
 
   const response = await fetch(target, { ...options, headers });
 
@@ -87,33 +90,6 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       if (!spend.ok) console.warn('Energy spend failed after successful chat:', await spend.text());
     } catch (err) {
       console.warn('Energy spend request failed:', err);
-    }
-
-    try {
-      const payload = options.body && typeof options.body === 'string' ? JSON.parse(options.body) : {};
-      const characterId = String(payload.characterId || '');
-      if (characterId) {
-        const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 30000);
-        try {
-          // Server decides the random 1–5 message trigger, romance priority,
-          // full-conversation summary, and fal.ai generation.
-          await fetch(RUBYCHAN_IMAGE_URL, {
-            method: 'POST',
-            signal: controller.signal,
-            headers: {
-              'Content-Type': 'application/json',
-              'x-telegram-user-id': user.id,
-              'x-telegram-user-info': JSON.stringify(user.info)
-            },
-            body: JSON.stringify({ characterId })
-          });
-        } finally {
-          window.clearTimeout(timeout);
-        }
-      }
-    } catch (err) {
-      console.warn('Contextual image generation skipped/failed:', err);
     }
   }
 
