@@ -6,7 +6,7 @@ const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions
 const RUBYCHAN_BALANCE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api-balance';
 const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-chat-persona-v2';
 const RUBYCHAN_SPEND_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-spend-energy';
-const RUBYCHAN_IMAGE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-image-generate-v4';
+const RUBYCHAN_IMAGE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-image-generate-v5';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
