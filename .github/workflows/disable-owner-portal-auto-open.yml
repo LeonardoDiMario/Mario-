@@ -1,0 +1,42 @@
+name: Disable owner portal auto-open
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'chore: disable owner portal auto-open'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove automatic owner portal trigger
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('src/App.tsx')
+          s = p.read_text()
+          pattern = r'''\n    // Check for secret owner admin portal query param[\s\S]*?\n    }\n  }, \[\]);'''
+          repl = '\n  }, []);'
+          ns, n = re.subn(pattern, repl, s, count=1)
+          if n != 1:
+              raise SystemExit('Owner portal auto-open block not found')
+          p.write_text(ns)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/App.tsx
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'chore: disable owner portal auto-open'
+          git push
+      - name: Remove this patch workflow
+        run: |
+          git rm .github/workflows/disable-owner-portal-auto-open.yml || true
+          git commit -m 'chore: remove owner portal patch workflow' || true
+          git push || true
