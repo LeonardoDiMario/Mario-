@@ -2,6 +2,7 @@ import { getTelegramUser } from './telegramSdk';
 
 const RUBYCHAN_API_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api';
 const RUBYCHAN_SETTINGS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-settings';
+const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-rewards';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
@@ -53,7 +54,21 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   headers.set('x-telegram-user-id', user.id);
   headers.set('x-telegram-user-info', JSON.stringify(user.info));
 
-  const isSettingsWrite = url === '/api/preferences' && (options.method || 'GET').toUpperCase() === 'POST';
+  const method = (options.method || 'GET').toUpperCase();
+  const isSettingsWrite = url === '/api/preferences' && method === 'POST';
+
+  if (url === '/api/user/claim-daily') {
+    return fetch(`${RUBYCHAN_REWARDS_URL}?route=claim-daily`, { ...options, method: 'POST', headers });
+  }
+
+  if (url === '/api/user/reward-status') {
+    return fetch(`${RUBYCHAN_REWARDS_URL}?route=status`, { ...options, method: 'GET', headers });
+  }
+
+  if (url === '/api/user/referral-stats') {
+    return fetch(`${RUBYCHAN_REWARDS_URL}?route=referral-stats`, { ...options, method: 'GET', headers });
+  }
+
   const target = isSettingsWrite
     ? RUBYCHAN_SETTINGS_URL
     : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
@@ -62,5 +77,5 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
 }
 
 export async function claimDailyBonus(): Promise<Response> {
-  return apiFetch('/api/user/daily-bonus', { method: 'POST' });
+  return apiFetch('/api/user/claim-daily', { method: 'POST' });
 }
