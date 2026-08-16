@@ -1,4 +1,5 @@
 import App from './App';
+import './characterAvatarFallback';
 
 // Keep the React app as-is, but force a fresh server-state read after a successful Daily Claim.
 // This fixes the UI showing the old Energy/cooldown because the parent state is loaded on startup.
