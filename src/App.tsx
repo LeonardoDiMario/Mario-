@@ -13,7 +13,6 @@ import { FloatingBottomNav } from './components/FloatingBottomNav';
 import { AgeGateModal } from './components/AgeGateModal';
 import { CharacterDetailModal } from './components/CharacterDetailModal';
 import { LegalSupportModal, PolicyType } from './components/LegalSupportModal';
-import { AdminDashboardModal } from './components/AdminDashboardModal';
 import { Character, ChatMessage, MemoryFact, UserPreferences, UserRelationship } from './types';
 import { initTelegramApp, triggerHaptic } from './utils/telegramSdk';
 import { apiFetch } from './utils/api';
@@ -59,7 +58,6 @@ export default function App() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
   const [isCreatorModalOpen, setIsCreatorModalOpen] = useState<boolean>(false);
   const [isStoreOpen, setIsStoreOpen] = useState<boolean>(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
   const [selectedMemoryCharacter, setSelectedMemoryCharacter] = useState<Character | null>(null);
   const [initialScenario, setInitialScenario] = useState<string | null>(null);
 
@@ -71,17 +69,6 @@ export default function App() {
     fetchUserProfile();
     fetchCharacters();
     fetchPreferences();
-
-    const params = new URLSearchParams(window.location.search);
-    const path = window.location.pathname.toLowerCase();
-    if (
-      params.get('admin') === 'true' || params.get('admin') === 'rubychan' || params.get('admin') === '1' ||
-      params.get('admin') === 'owner' || params.get('owner') === '1' || params.get('owner') === 'true' ||
-      params.get('key') === 'rubychan_admin_2026' || path === '/admin' || path === '/owner' || path === '/owner-login'
-    ) {
-      localStorage.setItem('rubychan_admin_key', 'rubychan_admin_2026');
-      setIsAdminModalOpen(true);
-    }
   }, []);
 
   const handleMainScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -332,7 +319,7 @@ export default function App() {
         )}
       </div>
 
-      {!activeCharacter && <FloatingBottomNav activeTab={activeTab} language={userPreferences.language} onChangeTab={(tab) => { setIsNavVisible(true); setActiveTab(tab); }} onSelectTab={(tab) => { setIsNavVisible(true); setActiveTab(tab); }} isVisible={isNavVisible && !selectedCharacterForModal && !isSettingsModalOpen && !isCreatorModalOpen && !isStoreOpen && !isMemoryModalOpen && !policyModalType && !isAdminModalOpen} />}
+      {!activeCharacter && <FloatingBottomNav activeTab={activeTab} language={userPreferences.language} onChangeTab={(tab) => { setIsNavVisible(true); setActiveTab(tab); }} onSelectTab={(tab) => { setIsNavVisible(true); setActiveTab(tab); }} isVisible={isNavVisible && !selectedCharacterForModal && !isSettingsModalOpen && !isCreatorModalOpen && !isStoreOpen && !isMemoryModalOpen && !policyModalType} />}
 
       <CharacterDetailModal character={selectedCharacterForModal} relationship={selectedCharacterForModal ? relationships[selectedCharacterForModal.id] : undefined} isPremiumUser={isPremiumUser} onClose={() => setSelectedCharacterForModal(null)} onStartNewChat={handleStartNewChat} onOpenStore={() => { setSelectedCharacterForModal(null); setIsStoreOpen(true); }} onOpenMemory={(char) => { setSelectedCharacterForModal(null); handleOpenMemoryModal(char); }} />
 
@@ -345,8 +332,6 @@ export default function App() {
       <LegalSupportModal isOpen={!!policyModalType} type={policyModalType || 'support'} onClose={() => setPolicyModalType(null)} />
 
       <CharacterCreatorModal isOpen={isCreatorModalOpen} onClose={() => setIsCreatorModalOpen(false)} onCreate={handleCreateCharacter} isPremiumUser={isPremiumUser} />
-
-      <AdminDashboardModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} />
     </div>
   );
 }
