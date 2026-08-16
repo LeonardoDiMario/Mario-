@@ -43,17 +43,19 @@ function getWebUserIdentity() {
   };
 }
 
-export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+function identityHeaders(options: RequestInit = {}) {
   const user = getWebUserIdentity();
   const headers = new Headers(options.headers || {});
-
   if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
     headers.set('Content-Type', 'application/json');
   }
-
   headers.set('x-telegram-user-id', user.id);
   headers.set('x-telegram-user-info', JSON.stringify(user.info));
+  return headers;
+}
 
+export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = identityHeaders(options);
   const method = (options.method || 'GET').toUpperCase();
   const isSettingsWrite = url === '/api/preferences' && method === 'POST';
 
@@ -67,6 +69,28 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
 
   if (url === '/api/user/referral-stats') {
     return fetch(`${RUBYCHAN_REWARDS_URL}?route=referral-stats`, { ...options, method: 'GET', headers });
+  }
+
+  if (url === '/api/user/profile' && method === 'GET') {
+    const [profileRes, rewardRes] = await Promise.all([
+      fetch(`${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`, { ...options, headers }),
+      fetch(`${RUBYCHAN_REWARDS_URL}?route=status`, { method: 'GET', headers })
+    ]);
+    const profileData = await profileRes.json();
+    const rewardData = await rewardRes.json().catch(() => ({}));
+    return new Response(JSON.stringify({
+      ...profileData,
+      profile: {
+        ...(profileData.profile || {}),
+        nextClaimAt: rewardData.nextClaimAt ?? null,
+        lastDailyClaim: rewardData.lastClaimAt ?? profileData.profile?.lastDailyClaim ?? null,
+        inviteCount: rewardData.inviteCount ?? 0,
+        referralEnergyEarned: rewardData.referralEnergyEarned ?? 0
+      }
+    }), {
+      status: profileRes.status,
+      headers: { 'content-type': 'application/json' }
+    });
   }
 
   const target = isSettingsWrite
