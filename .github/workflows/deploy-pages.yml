@@ -20,15 +20,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
       - name: Install dependencies
         run: npm install
-
       - name: Open Characters first in Telegram Mini App
         run: |
           python - <<'PY'
@@ -40,31 +37,26 @@ jobs:
           if old in s:
               p.write_text(s.replace(old, new, 1))
           PY
-
       - name: Build
         run: npm run build
-
       - name: Include Owner Portals in Pages artifact
         run: |
           test -f owner.html
           test -f owner-live.html
           test -f owner-history.html
+          test -f owner-center.html
           cp owner.html dist/owner.html
           cp owner-live.html dist/owner-live.html
           cp owner-history.html dist/owner-history.html
-          test -f dist/owner.html
-          test -f dist/owner-live.html
-          test -f dist/owner-history.html
+          cp owner-center.html dist/owner-center.html
+          test -f dist/owner-center.html
           ls -lh dist/owner*.html
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
-
   deploy:
     environment:
       name: github-pages
