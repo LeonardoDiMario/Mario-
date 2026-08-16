@@ -45,6 +45,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Include Owner Portal in Pages artifact
+        run: |
+          test -f owner.html
+          cp owner.html dist/owner.html
+          test -f dist/owner.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
