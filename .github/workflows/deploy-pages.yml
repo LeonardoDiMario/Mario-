@@ -45,11 +45,13 @@ jobs:
           test -f owner-live.html
           test -f owner-history.html
           test -f owner-center.html
+          test -f owner-control.html
           cp owner.html dist/owner.html
           cp owner-live.html dist/owner-live.html
           cp owner-history.html dist/owner-history.html
           cp owner-center.html dist/owner-center.html
-          test -f dist/owner-center.html
+          cp owner-control.html dist/owner-control.html
+          test -f dist/owner-control.html
           ls -lh dist/owner*.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
