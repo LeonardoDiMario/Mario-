@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/App.tsx'
+      - '.github/workflows/hard-remove-owner-portal.yml'
 
 permissions:
   contents: write
