@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   patch:
-    if: !startsWith(github.event.head_commit.message, 'chore: patch HomeView')
+    if: github.event.head_commit.message != 'chore: patch HomeView claim and settings'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,14 +23,9 @@ jobs:
           p = Path('src/components/HomeView.tsx')
           s = p.read_text()
 
-          old = """      if (data.success) {\n        setNextClaimAt(data.nextClaimAt || null);\n        setCooldownSeconds(data.nextClaimAt ? Math.max(1, Math.floor((new Date(data.nextClaimAt).getTime() - Date.now()) / 1000)) : 0);\n        onAddEnergy(25);\n      } else if (data.nextClaimAt) {\n        setNextClaimAt(data.nextClaimAt);\n      }"""
-          new = """      if (data.success) {\n        const next = data.nextClaimAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();\n        setNextClaimAt(next);\n        setCooldownSeconds(Math.max(1, Math.ceil((new Date(next).getTime() - Date.now()) / 1000)));\n        onAddEnergy(25);\n      } else if (data.nextClaimAt) {\n        setNextClaimAt(data.nextClaimAt);\n      }"""
-          if old in s:
-              s = s.replace(old, new, 1)
-
           old = """    setIsClaiming(true);\n    triggerHaptic('heavy');\n\n    try {"""
           new = """    setIsClaiming(true);\n    triggerHaptic('heavy');\n    const optimisticNext = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();\n    // Hide the Daily Claim card immediately; restore it only when the request fails.\n    setNextClaimAt(optimisticNext);\n    setCooldownSeconds(24 * 60 * 60);\n\n    try {"""
-          if old in s:
+          if old in s and new not in s:
               s = s.replace(old, new, 1)
 
           old = """    } catch (err) {\n      console.error('Daily claim request failed:', err);\n    } finally {"""
