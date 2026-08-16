@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RubyChan AI - Owner Control Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body{background:#0b0514;color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}.glass-card{background:rgba(24,11,40,.75);backdrop-filter:blur(12px);border:1px solid rgba(225,29,72,.2)}.tab-active{background:#e11d48!important;color:white!important;box-shadow:0 10px 24px rgba(225,29,72,.2)}
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+  <div class="max-w-6xl mx-auto space-y-6">
+    <header class="glass-card rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-xl border-rose-900/40">
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-purple-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-rose-600/30">👑</div>
+        <div><h1 class="text-xl md:text-2xl font-black bg-gradient-to-r from-rose-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">RubyChan AI Owner Portal</h1><p class="text-xs text-slate-400">Master Administration & Real-Time Telemetry</p></div>
+      </div>
+      <div class="flex items-center gap-3"><span class="px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/50 text-emerald-400 text-xs font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Online & Active</span><a href="./" class="px-4 py-2 bg-gradient-to-r from-rose-600 to-pink-600 text-white text-xs font-black rounded-xl flex items-center gap-2"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open React MiniApp</a></div>
+    </header>
+
+    <div class="flex flex-wrap gap-2 border-b border-rose-900/30 pb-3">
+      <button data-tab="stats" class="tab tab-active px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300"><i class="fa-solid fa-chart-pie mr-1.5"></i> Platform Stats</button>
+      <button data-tab="users" class="tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300"><i class="fa-solid fa-users mr-1.5"></i> Users & Telegram Members</button>
+      <button data-tab="characters" class="tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300"><i class="fa-solid fa-robot mr-1.5"></i> AI Characters</button>
+      <button data-tab="broadcast" class="tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300"><i class="fa-solid fa-bullhorn mr-1.5"></i> Broadcast Push</button>
+      <button data-tab="config" class="tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300"><i class="fa-solid fa-sliders mr-1.5"></i> System Config</button>
+    </div>
+
+    <section id="view" class="space-y-4"></section>
+  </div>
+<script>
+const view=document.getElementById('view');
+const tabs=[...document.querySelectorAll('.tab')];
+const sample={users:0,vip:0,messages:0,characters:0};
+function setTab(name){tabs.forEach(t=>t.classList.toggle('tab-active',t.dataset.tab===name));
+if(name==='stats')view.innerHTML=`<div class="grid grid-cols-2 md:grid-cols-4 gap-4">${card('Total Users',sample.users,'Active Members','text-white')} ${card('VIP Members',sample.vip,'Premium Subscribers','text-amber-400','👑')} ${card('Total AI Messages',sample.messages,'Conversations','text-purple-300','💬')} ${card('Characters',sample.characters,'Platform Directory','text-rose-300','🎭')}</div><div class="glass-card rounded-2xl p-6"><div class="flex items-center justify-between mb-4"><h3 class="font-extrabold text-sm">Real-Time Telemetry</h3><span class="text-[10px] text-emerald-400">SYSTEM ONLINE</span></div><div class="grid md:grid-cols-3 gap-3"><div class="bg-[#12071f] rounded-xl p-4 border border-rose-900/30"><p class="text-[10px] text-slate-500 uppercase">AI Service</p><p class="text-sm font-bold text-emerald-400 mt-1">Google Gemini</p></div><div class="bg-[#12071f] rounded-xl p-4 border border-rose-900/30"><p class="text-[10px] text-slate-500 uppercase">Bot</p><p class="text-sm font-bold text-rose-300 mt-1">@Rubby_Chan_Bot</p></div><div class="bg-[#12071f] rounded-xl p-4 border border-rose-900/30"><p class="text-[10px] text-slate-500 uppercase">Image Engine</p><p class="text-sm font-bold text-purple-300 mt-1">Gemini Image</p></div></div></div>`;
+if(name==='users')view.innerHTML=`<div class="glass-card rounded-2xl overflow-hidden"><div class="p-4 bg-[#180b28] border-b border-rose-900/30 flex justify-between"><h3 class="font-extrabold text-sm"><i class="fa-solid fa-users text-rose-400 mr-2"></i>Registered Members & Telegram Users</h3><button class="px-3 py-1.5 bg-rose-950 text-rose-200 border border-rose-700 text-xs rounded-xl">Refresh</button></div><div class="p-8 text-center text-xs text-slate-500">Members table will connect to live owner APIs here.</div></div>`;
+if(name==='characters')view.innerHTML=`<div class="flex justify-between items-center"><h3 class="font-extrabold text-sm">AI Characters Platform Directory</h3><a href="./?admin=true" class="px-3 py-1.5 bg-rose-600 text-white text-xs rounded-xl font-bold"><i class="fa-solid fa-plus mr-1"></i> Edit in React App</a></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">${['Ruby Chan','Hnin Wai','Custom Character'].map((n,i)=>`<div class="glass-card p-4 rounded-2xl flex items-start gap-3.5"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-600/40 to-purple-600/40 border border-rose-500/40 flex items-center justify-center text-xl">${i===0?'🌹':i===1?'🌸':'✨'}</div><div><h4 class="font-extrabold text-sm">${n}</h4><p class="text-[11px] text-rose-300">Roleplay Companion</p><p class="text-[10px] text-slate-400 mt-1">Character configuration, personality, memory and image settings.</p></div></div>`).join('')}</div>`;
+if(name==='broadcast')view.innerHTML=`<div class="glass-card p-6 rounded-2xl border-rose-900/40 space-y-4 max-w-2xl"><h3 class="font-extrabold text-sm"><i class="fa-solid fa-bullhorn text-rose-400 mr-2"></i>Send Telegram Push Broadcast</h3><p class="text-xs text-slate-400">Broadcast composer matching the provided owner portal design.</p><textarea class="w-full bg-[#140a1f] border border-rose-900/40 rounded-xl p-3 text-xs" rows="5" placeholder="Type your broadcast message here..."></textarea><input class="w-full bg-[#140a1f] border border-rose-900/40 rounded-xl p-3 text-xs" placeholder="Optional WebApp Button URL"/><button class="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white text-xs font-black rounded-xl"><i class="fa-solid fa-paper-plane mr-1.5"></i>Send Broadcast</button></div>`;
+if(name==='config')view.innerHTML=`<div class="glass-card p-6 rounded-2xl border-rose-900/40 space-y-4 max-w-2xl"><h3 class="font-extrabold text-sm"><i class="fa-solid fa-sliders text-rose-400 mr-2"></i>AI & Telegram Configuration</h3><div class="grid grid-cols-2 gap-4"><div class="p-4 bg-[#12071f] rounded-xl border border-rose-900/30"><p class="text-[10px] text-slate-500">Telegram Bot</p><p class="text-rose-300 font-mono font-bold mt-1">@Rubby_Chan_Bot</p></div><div class="p-4 bg-[#12071f] rounded-xl border border-rose-900/30"><p class="text-[10px] text-slate-500">Default AI Engine</p><p class="text-emerald-400 font-mono font-bold mt-1">Gemini</p></div></div><div class="pt-2"><button class="px-4 py-2 bg-purple-950 text-purple-200 border border-purple-700/60 rounded-xl text-xs font-bold"><i class="fa-solid fa-download mr-2"></i>Database Backup</button></div></div>`;
+}
+function card(title,value,sub,color,icon=''){return `<div class="glass-card p-5 rounded-2xl"><p class="text-xs text-slate-400 font-bold mb-1">${title}</p><p class="text-2xl font-black ${color}">${icon} ${value}</p><span class="text-[10px] text-slate-500 font-bold">${sub}</span></div>`}
+tabs.forEach(t=>t.onclick=()=>setTab(t.dataset.tab)); setTab('stats');
+</script></body></html>
