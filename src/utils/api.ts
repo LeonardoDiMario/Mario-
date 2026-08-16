@@ -3,6 +3,7 @@ import { getTelegramUser } from './telegramSdk';
 const RUBYCHAN_API_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api';
 const RUBYCHAN_SETTINGS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-settings';
 const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-rewards-v2';
+const RUBYCHAN_BALANCE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api-balance';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
@@ -46,11 +47,9 @@ function getWebUserIdentity() {
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const user = getWebUserIdentity();
   const headers = new Headers(options.headers || {});
-
   if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
     headers.set('Content-Type', 'application/json');
   }
-
   headers.set('x-telegram-user-id', user.id);
   headers.set('x-telegram-user-info', JSON.stringify(user.info));
 
@@ -63,10 +62,36 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
     : isDailyClaim
       ? `${RUBYCHAN_REWARDS_URL}?route=claim-daily`
       : isDailyStatus
-        ? `${RUBYCHAN_REWARDS_URL}?route=status`
+        ? `${RUBYCHAN_BALANCE_URL}?route=status`
         : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
 
-  return fetch(target, { ...options, headers });
+  const res = await fetch(target, { ...options, headers });
+
+  // Every successful WebApp chat message spends exactly 1 Energy on the server.
+  if (url === '/api/chat/send' && method === 'POST') {
+    try {
+      const data = await res.clone().json();
+      if (data?.success) {
+        const spent = await fetch(`${RUBYCHAN_BALANCE_URL}?route=spend`, {
+          method: 'POST',
+          headers: { 'x-telegram-user-id': user.id, 'x-telegram-user-info': JSON.stringify(user.info) }
+        });
+        const spendData = await spent.json().catch(() => ({}));
+        if (!spendData?.success) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: spendData?.reason === 'INSUFFICIENT_ENERGY' ? 'Not enough Energy.' : 'Energy update failed.'
+          }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        }
+        data.energy = spendData.energy;
+        return new Response(JSON.stringify(data), { status: res.status, headers: { 'Content-Type': 'application/json' } });
+      }
+    } catch (err) {
+      console.error('Energy sync failed:', err);
+    }
+  }
+
+  return res;
 }
 
 export async function claimDailyBonus(): Promise<Response> {
