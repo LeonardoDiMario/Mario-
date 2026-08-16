@@ -1,0 +1,58 @@
+name: Patch HomeView claim and settings
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: !startsWith(github.event.head_commit.message, 'chore: patch HomeView')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch HomeView
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/components/HomeView.tsx')
+          s = p.read_text()
+
+          old = """      if (data.success) {\n        setNextClaimAt(data.nextClaimAt || null);\n        setCooldownSeconds(data.nextClaimAt ? Math.max(1, Math.floor((new Date(data.nextClaimAt).getTime() - Date.now()) / 1000)) : 0);\n        onAddEnergy(25);\n      } else if (data.nextClaimAt) {\n        setNextClaimAt(data.nextClaimAt);\n      }"""
+          new = """      if (data.success) {\n        const next = data.nextClaimAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();\n        setNextClaimAt(next);\n        setCooldownSeconds(Math.max(1, Math.ceil((new Date(next).getTime() - Date.now()) / 1000)));\n        onAddEnergy(25);\n      } else if (data.nextClaimAt) {\n        setNextClaimAt(data.nextClaimAt);\n      }"""
+          if old in s:
+              s = s.replace(old, new, 1)
+
+          old = """    setIsClaiming(true);\n    triggerHaptic('heavy');\n\n    try {"""
+          new = """    setIsClaiming(true);\n    triggerHaptic('heavy');\n    const optimisticNext = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();\n    // Hide the Daily Claim card immediately; restore it only when the request fails.\n    setNextClaimAt(optimisticNext);\n    setCooldownSeconds(24 * 60 * 60);\n\n    try {"""
+          if old in s:
+              s = s.replace(old, new, 1)
+
+          old = """    } catch (err) {\n      console.error('Daily claim request failed:', err);\n    } finally {"""
+          new = """    } catch (err) {\n      setNextClaimAt(null);\n      setCooldownSeconds(0);\n      console.error('Daily claim request failed:', err);\n    } finally {"""
+          if old in s:
+              s = s.replace(old, new, 1)
+
+          s = s.replace("{cooldownSeconds <= 0 && (", "{cooldownSeconds <= 0 && !isClaiming && (", 1)
+          s = s.replace("{lang === 'my' ? 'User Settings' : t('nav_settings', lang)}", "{t('nav_settings', lang)}", 1)
+          s = s.replace("{lang === 'my' ? 'Persona, Voice & Profile' : t('profile_language_desc', lang)}", "{t('tap_to_open', lang)}", 1)
+
+          p.write_text(s)
+          PY
+
+      - name: Commit patch
+        run: |
+          if git diff --quiet -- src/components/HomeView.tsx; then
+            echo 'No HomeView changes needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/components/HomeView.tsx
+          git commit -m 'chore: patch HomeView claim and settings'
+          git push
