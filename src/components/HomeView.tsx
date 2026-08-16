@@ -203,7 +203,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <div className="bg-gradient-to-r from-indigo-950/60 via-purple-950/60 to-slate-950 border border-indigo-600/40 rounded-3xl p-3.5 flex items-center justify-between shadow-xl">
         <div className="space-y-1 max-w-[65%]">
           <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-            <Share2 className="w-2.5 h-2.5" /> Tasks
+            <Share2 className="w-2.5 h-2.5" /> {t('tasks', lang)}
           </span>
           <h3 className="font-extrabold text-xs text-white">{t('task_invite_title', lang)}</h3>
           <p className="text-[10px] text-slate-400 leading-snug">{t('task_invite_desc', lang)}</p>
@@ -261,7 +261,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="p-2 bg-slate-900 text-slate-300 rounded-xl shrink-0"><User className="w-4 h-4" /></div>
             <div>
               <p className="font-extrabold text-xs text-white group-hover:text-rose-300">{t('nav_settings', lang)}</p>
-              <p className="text-[10px] text-slate-400">{t('profile_language_desc', lang)}</p>
+              <p className="text-[10px] text-slate-400">{t('tap_to_open', lang)}</p>
             </div>
           </button>
         </div>
