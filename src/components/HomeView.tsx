@@ -90,18 +90,30 @@ export const HomeView: React.FC<HomeViewProps> = ({
     setIsClaiming(true);
     triggerHaptic('heavy');
 
+    // Optimistically hide the Daily Claim card immediately.
+    const optimisticNext = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    setNextClaimAt(optimisticNext);
+    setCooldownSeconds(24 * 60 * 60);
+
     try {
       const res = await apiFetch('/api/user/claim-daily', { method: 'POST' });
       const data = await res.json();
 
       if (data.success) {
-        setNextClaimAt(data.nextClaimAt || null);
-        setCooldownSeconds(data.nextClaimAt ? Math.max(1, Math.floor((new Date(data.nextClaimAt).getTime() - Date.now()) / 1000)) : 0);
+        const next = data.nextClaimAt || optimisticNext;
+        setNextClaimAt(next);
+        setCooldownSeconds(Math.max(1, Math.ceil((new Date(next).getTime() - Date.now()) / 1000)));
         onAddEnergy(25);
       } else if (data.nextClaimAt) {
         setNextClaimAt(data.nextClaimAt);
+        setCooldownSeconds(Math.max(1, Math.ceil((new Date(data.nextClaimAt).getTime() - Date.now()) / 1000)));
+      } else {
+        setNextClaimAt(null);
+        setCooldownSeconds(0);
       }
     } catch (err) {
+      setNextClaimAt(null);
+      setCooldownSeconds(0);
       console.error('Daily claim request failed:', err);
     } finally {
       setIsClaiming(false);
@@ -168,7 +180,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {cooldownSeconds <= 0 && (
+      {cooldownSeconds <= 0 && !isClaiming && (
         <div className="bg-gradient-to-r from-rose-950/60 via-purple-950/60 to-slate-950 border border-rose-600/40 rounded-3xl p-3.5 flex items-center justify-between shadow-xl">
           <div className="space-y-1">
             <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full inline-flex items-center gap-1">
