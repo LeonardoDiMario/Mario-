@@ -6,7 +6,7 @@ const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions
 const RUBYCHAN_BALANCE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api-balance';
 const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-web-chat-lite-v3';
 const RUBYCHAN_SPEND_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-spend-energy';
-const RUBYCHAN_IMAGE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-image-generate-v5';
+const RUBYCHAN_IMAGE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-image-generate-gemini';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
@@ -62,6 +62,7 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   const isDailyStatus = url === '/api/user/profile' && method === 'GET';
   const isChatSend = url === '/api/chat/send' && method === 'POST';
   const isImageGenerate = url === '/api/image/generate' && method === 'POST';
+  const isChatHistory = /^\/api\/chat\/[^/]+$/.test(url) && method === 'GET';
 
   const target = isSettingsRoute
     ? RUBYCHAN_SETTINGS_URL
@@ -90,6 +91,27 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       if (!spend.ok) console.warn('Energy spend failed after successful chat:', await spend.text());
     } catch (err) {
       console.warn('Energy spend request failed:', err);
+    }
+  }
+
+  // Normalize Supabase's snake_case image_url to the UI's imageUrl field.
+  // This keeps generated Gemini images visible after chat history reloads.
+  if (isChatHistory && response.ok) {
+    try {
+      const data = await response.json();
+      if (Array.isArray(data.messages)) {
+        data.messages = data.messages.map((message: any) => ({
+          ...message,
+          imageUrl: message.imageUrl || message.image_url || undefined
+        }));
+      }
+      return new Response(JSON.stringify(data), {
+        status: response.status,
+        statusText: response.statusText,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (err) {
+      console.warn('Chat history image normalization failed:', err);
     }
   }
 
