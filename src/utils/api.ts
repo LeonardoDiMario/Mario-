@@ -6,6 +6,7 @@ const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions
 const RUBYCHAN_BALANCE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api-balance';
 const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-chat-persona-v2';
 const RUBYCHAN_SPEND_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-spend-energy';
+const RUBYCHAN_IMAGE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-image-generate-v3';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
@@ -90,6 +91,35 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       }
     } catch (err) {
       console.warn('Energy spend request failed:', err);
+    }
+
+    // Every successful message asks the server whether this is a good moment
+    // for a contextual image. The server decides randomly within five messages,
+    // boosts romance/emotional moments, and forces an image by message five.
+    try {
+      const payload = options.body && typeof options.body === 'string' ? JSON.parse(options.body) : {};
+      const characterId = String(payload.characterId || '');
+      if (characterId) {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 30000);
+        try {
+          await fetch(RUBYCHAN_IMAGE_URL, {
+            method: 'POST',
+            signal: controller.signal,
+            headers: {
+              'Content-Type': 'application/json',
+              'x-telegram-user-id': user.id,
+              'x-telegram-user-info': JSON.stringify(user.info)
+            },
+            body: JSON.stringify({ characterId })
+          });
+        } finally {
+          window.clearTimeout(timeout);
+        }
+      }
+    } catch (err) {
+      // Image generation must never block or fail the user's text chat.
+      console.warn('Contextual image generation skipped/failed:', err);
     }
   }
 
