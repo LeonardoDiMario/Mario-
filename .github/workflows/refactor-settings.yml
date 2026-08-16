@@ -1,0 +1,69 @@
+name: Refactor Settings UI
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'chore: apply settings UI refactor'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch SettingsView and HomeView
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          # Remove the broken persona/AI settings UI from SettingsView.
+          p = Path('src/components/SettingsView.tsx')
+          s = p.read_text()
+          s = s.replace("import { UserSettingsModal } from './UserSettingsModal';\n", "")
+          s = s.replace("  const [isPersonaModalOpen, setIsPersonaModalOpen] = useState(false);\n", "")
+          s = s.replace("  const personaName = userPreferences?.userPersona?.name || (currentLang === 'my' ? 'ဧည့်သည်တော်' : 'Traveler');\n", "")
+          s = re.sub(r"\n  const handleSavePersonaPreferences[\\s\\S]*?\n  };\n", "\n", s, count=1)
+          # Drop the whole TOP 1 persona section, up to membership card.
+          s = re.sub(r"\n      /\\* TOP 1\\. PERSONA & AI SETTINGS CARD[\\s\\S]*?\n      /\\* 2\\. Your Membership Card \", "\n      {/* 1. Your Membership Card ", s, count=1)
+          # Remove any leftover modal rendering.
+          s = re.sub(r"\n      \{isPersonaModalOpen && <UserSettingsModal[\\s\\S]*?\}\\n", "\n", s, count=1)
+          p.write_text(s)
+
+          # Replace broken Settings quick action with Chat History shortcut.
+          p = Path('src/components/HomeView.tsx')
+          s = p.read_text()
+          old = '''          <button onClick={() => { triggerHaptic('light'); onOpenSettingsModal(); }} className="bg-[#140a1f] border border-slate-800 hover:border-rose-500 p-3 rounded-2xl flex items-center space-x-2.5 text-left transition-all shadow-md group">
+            <div className="p-2 bg-slate-900 text-slate-300 rounded-xl shrink-0"><User className="w-4 h-4" /></div>
+            <div>
+              <p className="font-extrabold text-xs text-white group-hover:text-rose-300">{t('nav_settings', lang)}</p>
+              <p className="text-[10px] text-slate-400">{t('profile_language_desc', lang)}</p>
+            </div>
+          </button>'''
+          new = '''          <button onClick={() => { triggerHaptic('medium'); onNavigateTab('chats'); }} className="bg-[#140a1f] border border-slate-800 hover:border-indigo-500 p-3 rounded-2xl flex items-center space-x-2.5 text-left transition-all shadow-md group">
+            <div className="p-2 bg-indigo-950 text-indigo-300 rounded-xl shrink-0"><MessageSquare className="w-4 h-4" /></div>
+            <div>
+              <p className="font-extrabold text-xs text-white group-hover:text-indigo-300">{t('nav_chats', lang)}</p>
+              <p className="text-[10px] text-slate-400">{t('chat_history_desc', lang)}</p>
+            </div>
+          </button>'''
+          if old not in s:
+              raise SystemExit('HomeView settings quick action block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo 'No changes.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/components/SettingsView.tsx src/components/HomeView.tsx
+          git commit -m 'chore: apply settings UI refactor'
+          git push
