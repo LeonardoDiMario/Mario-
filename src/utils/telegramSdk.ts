@@ -62,7 +62,25 @@ declare global {
 }
 
 export const getTelegramWebApp = () => {
-  return typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
+  if (typeof window === 'undefined') return undefined;
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return undefined;
+
+  return {
+    ...tg,
+    openTelegramLink: (url: string) => {
+      try {
+        const parsed = new URL(url);
+        if (parsed.hostname === 't.me' && /^\/RubbyChanbot\/?$/i.test(parsed.pathname)) {
+          parsed.search = '';
+          parsed.hash = '';
+        }
+        tg.openTelegramLink(parsed.toString());
+      } catch {
+        tg.openTelegramLink(url);
+      }
+    }
+  };
 };
 
 export const getTelegramUser = (): TelegramUser => {
