@@ -10,20 +10,7 @@ const RUBYCHAN_IMAGE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
-  if (tgUser?.id) {
-    return {
-      id: String(tgUser.id),
-      info: {
-        id: tgUser.id,
-        first_name: tgUser.first_name || 'Telegram User',
-        last_name: tgUser.last_name || '',
-        username: tgUser.username || `tg_${tgUser.id}`,
-        photo_url: tgUser.photo_url || '',
-        language_code: tgUser.language_code || ''
-      }
-    };
-  }
-
+  if (tgUser?.id) return { id: String(tgUser.id), info: tgUser };
   let webUserId = localStorage.getItem('rubychan_web_user_id');
   let webUserName = localStorage.getItem('rubychan_web_user_name');
   if (!webUserId) {
@@ -33,29 +20,15 @@ function getWebUserIdentity() {
     localStorage.setItem('rubychan_web_user_id', webUserId);
     localStorage.setItem('rubychan_web_user_name', webUserName);
   }
-
-  return {
-    id: webUserId,
-    info: {
-      id: webUserId,
-      first_name: webUserName || 'Web Visitor',
-      last_name: '(Web App)',
-      username: webUserName || `Web_${webUserId.slice(-4)}`,
-      photo_url: '',
-      language_code: ''
-    }
-  };
+  return { id: webUserId, info: { id: webUserId, first_name: webUserName || 'Web Visitor', last_name: '(Web App)', username: webUserName || `Web_${webUserId.slice(-4)}`, photo_url: '', language_code: '' } };
 }
 
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const user = getWebUserIdentity();
   const headers = new Headers(options.headers || {});
-  if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
-    headers.set('Content-Type', 'application/json');
-  }
+  if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') headers.set('Content-Type', 'application/json');
   headers.set('x-telegram-user-id', user.id);
   headers.set('x-telegram-user-info', JSON.stringify(user.info));
-
   const method = (options.method || 'GET').toUpperCase();
   const isSettingsRoute = url === '/api/preferences';
   const isDailyClaim = url === '/api/user/claim-daily' && method === 'POST';
@@ -63,61 +36,18 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   const isChatSend = url === '/api/chat/send' && method === 'POST';
   const isImageGenerate = url === '/api/image/generate' && method === 'POST';
   const isChatHistory = /^\/api\/chat\/[^/]+$/.test(url) && method === 'GET';
-
-  const target = isSettingsRoute
-    ? RUBYCHAN_SETTINGS_URL
-    : isDailyClaim
-      ? `${RUBYCHAN_REWARDS_URL}?route=claim-daily`
-      : isDailyStatus
-        ? `${RUBYCHAN_BALANCE_URL}?route=status`
-        : isChatSend
-          ? RUBYCHAN_CHAT_URL
-          : isImageGenerate
-            ? RUBYCHAN_IMAGE_URL
-            : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
-
+  const target = isSettingsRoute ? RUBYCHAN_SETTINGS_URL : isDailyClaim ? `${RUBYCHAN_REWARDS_URL}?route=claim-daily` : isDailyStatus ? `${RUBYCHAN_BALANCE_URL}?route=status` : isChatSend ? RUBYCHAN_CHAT_URL : isImageGenerate ? RUBYCHAN_IMAGE_URL : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
   const response = await fetch(target, { ...options, headers });
-
   if (isChatSend && response.ok) {
-    try {
-      const spend = await fetch(RUBYCHAN_SPEND_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-telegram-user-id': user.id,
-          'x-telegram-user-info': JSON.stringify(user.info)
-        }
-      });
-      if (!spend.ok) console.warn('Energy spend failed after successful chat:', await spend.text());
-    } catch (err) {
-      console.warn('Energy spend request failed:', err);
-    }
+    try { await fetch(RUBYCHAN_SPEND_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-telegram-user-id': user.id, 'x-telegram-user-info': JSON.stringify(user.info) } }); } catch {}
   }
-
-  // Normalize Supabase's snake_case image_url to the UI's imageUrl field.
-  // This keeps generated Gemini images visible after chat history reloads.
   if (isChatHistory && response.ok) {
     try {
       const data = await response.json();
-      if (Array.isArray(data.messages)) {
-        data.messages = data.messages.map((message: any) => ({
-          ...message,
-          imageUrl: message.imageUrl || message.image_url || undefined
-        }));
-      }
-      return new Response(JSON.stringify(data), {
-        status: response.status,
-        statusText: response.statusText,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } catch (err) {
-      console.warn('Chat history image normalization failed:', err);
-    }
+      if (Array.isArray(data.messages)) data.messages = data.messages.map((m: any) => ({ ...m, imageUrl: m.imageUrl || m.image_url || undefined }));
+      return new Response(JSON.stringify(data), { status: response.status, statusText: response.statusText, headers: { 'Content-Type': 'application/json' } });
+    } catch {}
   }
-
   return response;
 }
-
-export async function claimDailyBonus(): Promise<Response> {
-  return apiFetch('/api/user/claim-daily', { method: 'POST' });
-}
+export async function claimDailyBonus(): Promise<Response> { return apiFetch('/api/user/claim-daily', { method: 'POST' }); }
