@@ -28,6 +28,15 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: Include Owner Dashboard entry
+        run: |
+          test -f public/owner/index.html
+          test -f owner.html
+          mkdir -p dist/owner
+          cp public/owner/index.html dist/owner/index.html
+          cp owner.html dist/owner.html
+          test -f dist/owner/index.html
+          test -f dist/owner.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
