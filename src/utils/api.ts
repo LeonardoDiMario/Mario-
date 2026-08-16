@@ -2,7 +2,7 @@ import { getTelegramUser } from './telegramSdk';
 
 const RUBYCHAN_API_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api';
 const RUBYCHAN_SETTINGS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-settings';
-const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-rewards';
+const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-rewards-v2';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
@@ -43,59 +43,28 @@ function getWebUserIdentity() {
   };
 }
 
-function identityHeaders(options: RequestInit = {}) {
+export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const user = getWebUserIdentity();
   const headers = new Headers(options.headers || {});
+
   if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
     headers.set('Content-Type', 'application/json');
   }
+
   headers.set('x-telegram-user-id', user.id);
   headers.set('x-telegram-user-info', JSON.stringify(user.info));
-  return headers;
-}
 
-export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const headers = identityHeaders(options);
   const method = (options.method || 'GET').toUpperCase();
   const isSettingsWrite = url === '/api/preferences' && method === 'POST';
-
-  if (url === '/api/user/claim-daily') {
-    return fetch(`${RUBYCHAN_REWARDS_URL}?route=claim-daily`, { ...options, method: 'POST', headers });
-  }
-
-  if (url === '/api/user/reward-status') {
-    return fetch(`${RUBYCHAN_REWARDS_URL}?route=status`, { ...options, method: 'GET', headers });
-  }
-
-  if (url === '/api/user/referral-stats') {
-    return fetch(`${RUBYCHAN_REWARDS_URL}?route=referral-stats`, { ...options, method: 'GET', headers });
-  }
-
-  if (url === '/api/user/profile' && method === 'GET') {
-    const [profileRes, rewardRes] = await Promise.all([
-      fetch(`${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`, { ...options, headers }),
-      fetch(`${RUBYCHAN_REWARDS_URL}?route=status`, { method: 'GET', headers })
-    ]);
-    const profileData = await profileRes.json();
-    const rewardData = await rewardRes.json().catch(() => ({}));
-    return new Response(JSON.stringify({
-      ...profileData,
-      profile: {
-        ...(profileData.profile || {}),
-        nextClaimAt: rewardData.nextClaimAt ?? null,
-        lastDailyClaim: rewardData.lastClaimAt ?? profileData.profile?.lastDailyClaim ?? null,
-        inviteCount: rewardData.inviteCount ?? 0,
-        referralEnergyEarned: rewardData.referralEnergyEarned ?? 0
-      }
-    }), {
-      status: profileRes.status,
-      headers: { 'content-type': 'application/json' }
-    });
-  }
-
+  const isDailyClaim = url === '/api/user/claim-daily' && method === 'POST';
+  const isDailyStatus = url === '/api/user/profile' && method === 'GET';
   const target = isSettingsWrite
     ? RUBYCHAN_SETTINGS_URL
-    : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
+    : isDailyClaim
+      ? `${RUBYCHAN_REWARDS_URL}?route=claim-daily`
+      : isDailyStatus
+        ? `${RUBYCHAN_REWARDS_URL}?route=status`
+        : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
 
   return fetch(target, { ...options, headers });
 }
