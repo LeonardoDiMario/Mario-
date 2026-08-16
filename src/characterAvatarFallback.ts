@@ -1,94 +1,75 @@
-// Resolve character avatar API endpoints to real image URLs and recover broken remote images.
-// Nekos.best documents waifu/husbando image endpoints with direct image URLs in the JSON response.
+// Fixed character avatars: each character gets ONE permanent image URL.
+// No random API calls and no per-refresh image rotation.
 
-const WAIFU_API = 'https://nekos.best/api/v2/waifu';
-const HUSBANDO_API = 'https://nekos.best/api/v2/husbando';
+const FIXED_AVATARS: Record<string, string> = {
+  'Ruby Chan': 'https://i.waifu.pics/Lcq0Tx8.jpg',
+  'Hana': 'https://i.waifu.pics/P817hp4.jpg',
+  'Yuna': 'https://i.waifu.pics/Tj6Wzwo.png',
+  'Akari': 'https://i.waifu.pics/8Ml_Y6V.jpg',
+  'Sakura': 'https://i.waifu.pics/xMRH74e.png',
+  'Reina': 'https://i.waifu.pics/DmrSW~9.jpg',
+  'Ruby': 'https://i.waifu.pics/-j4qjGv.png',
+  'Velvet': 'https://i.waifu.pics/cKe~bpZ.jpg',
+  'Rin': 'https://i.waifu.pics/XcpL3nR.jpg',
+  'Celeste': 'https://i.waifu.pics/Weau1RP.jpg',
+  'Seraphine': 'https://i.waifu.pics/8TL6ycS.jpg',
+  'Scarlett Rose': 'https://i.waifu.pics/DjgwmRf.jpg',
+  'Dante Vane': 'https://i.waifu.pics/1y5O6HN.jpg',
+  'Ren Kurosawa': 'https://i.waifu.pics/qUY7BBo.jpg',
+  'Lady Victoria': 'https://i.waifu.pics/Lcq0Tx8.jpg',
+  'Aria Vane': 'https://i.waifu.pics/P817hp4.jpg',
+  'Lord Kaelen': 'https://i.waifu.pics/Tj6Wzwo.png',
+  'Julian Mercer': 'https://i.waifu.pics/8Ml_Y6V.jpg',
+  'May Lin': 'https://i.waifu.pics/xMRH74e.png',
+  'Zack Sterling': 'https://i.waifu.pics/DmrSW~9.jpg',
+};
 
-async function fetchAnimeUrl(kind: 'waifu' | 'husbando'): Promise<string | null> {
-  try {
-    const response = await fetch(kind === 'husbando' ? HUSBANDO_API : WAIFU_API, {
-      headers: { Accept: 'application/json' },
-      cache: 'no-store'
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    const url = data?.results?.[0]?.url;
-    return typeof url === 'string' && url.startsWith('http') ? url : null;
-  } catch {
-    return null;
-  }
-}
-
-function avatarKindFromSrc(src: string): 'waifu' | 'husbando' {
-  return src.includes('/husbando') ? 'husbando' : 'waifu';
+function fixedAvatarForAlt(alt: string): string | null {
+  const key = alt.trim().toLowerCase();
+  const found = Object.entries(FIXED_AVATARS).find(([name]) => name.toLowerCase() === key);
+  return found?.[1] || null;
 }
 
 function isCharacterAvatarImage(img: HTMLImageElement): boolean {
   const src = img.currentSrc || img.src || '';
-  const alt = (img.alt || '').toLowerCase();
+  const alt = (img.alt || '').trim().toLowerCase();
   return (
     src.includes('nekos.best') ||
     src.includes('image.cdn2.seaart') ||
     src.includes('images-ng.pixai') ||
     src.includes('pbs.twimg.com/media/') ||
-    alt.includes('ruby') ||
-    alt.includes('hana') ||
-    alt.includes('yuna') ||
-    alt.includes('akari') ||
-    alt.includes('sakura') ||
-    alt.includes('reina') ||
-    alt.includes('velvet') ||
-    alt.includes('celeste') ||
-    alt.includes('seraphine') ||
-    alt.includes('scarlett') ||
-    alt.includes('aria') ||
-    alt.includes('may lin') ||
-    alt.includes('dante') ||
-    alt.includes('kaelen') ||
-    alt.includes('julian') ||
-    alt.includes('zack')
+    src.includes('i.waifu.pics/') ||
+    Object.keys(FIXED_AVATARS).some((name) => name.toLowerCase() === alt)
   );
 }
 
-async function recoverBrokenAvatar(img: HTMLImageElement) {
-  if (img.dataset.rubyAvatarFallback === '1') return;
-  img.dataset.rubyAvatarFallback = '1';
+function applyFixedAvatar(img: HTMLImageElement) {
+  if (img.dataset.rubyFixedAvatar === '1') return;
 
-  const kind = avatarKindFromSrc(img.currentSrc || img.src || '');
-  const fallbackUrl = await fetchAnimeUrl(kind);
-  if (fallbackUrl) {
-    img.dataset.rubyAvatarResolved = '1';
-    img.src = fallbackUrl;
-  }
+  const fixed = fixedAvatarForAlt(img.alt || '');
+  if (!fixed) return;
+
+  img.dataset.rubyFixedAvatar = '1';
+  img.src = fixed;
 }
 
-// Capture image failures before component-level onError handlers replace the source.
+// Replace API-style/random avatar sources with their permanent character image.
+function scanCharacterImages() {
+  document.querySelectorAll<HTMLImageElement>('img').forEach(applyFixedAvatar);
+}
+
+// Only swap to the same permanent image on failure; never fetch a new random image.
 document.addEventListener('error', (event) => {
   const target = event.target;
   if (!(target instanceof HTMLImageElement)) return;
   if (!isCharacterAvatarImage(target)) return;
-  event.stopPropagation();
-  event.stopImmediatePropagation();
-  void recoverBrokenAvatar(target);
+
+  const fixed = fixedAvatarForAlt(target.alt || '');
+  if (fixed && target.src !== fixed) {
+    target.dataset.rubyFixedAvatar = '1';
+    target.src = fixed;
+  }
 }, true);
-
-// Convert our API-style character avatar values into actual image URLs.
-async function resolveApiAvatar(img: HTMLImageElement) {
-  const src = img.getAttribute('src') || '';
-  if (!src.startsWith('https://nekos.best/api/v2/')) return;
-  if (img.dataset.rubyAvatarResolved === '1') return;
-
-  img.dataset.rubyAvatarResolved = '1';
-  const kind = avatarKindFromSrc(src);
-  const url = await fetchAnimeUrl(kind);
-  if (url) img.src = url;
-}
-
-function scanCharacterImages() {
-  document.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
-    void resolveApiAvatar(img);
-  });
-}
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', scanCharacterImages, { once: true });
