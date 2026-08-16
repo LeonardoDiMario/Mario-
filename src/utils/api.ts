@@ -6,7 +6,6 @@ const RUBYCHAN_REWARDS_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions
 const RUBYCHAN_BALANCE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-api-balance';
 const RUBYCHAN_CHAT_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-chat-resilient-v2';
 const RUBYCHAN_SPEND_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-spend-energy';
-const RUBYCHAN_IMAGE_URL = 'https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-image-generate-v5';
 
 function getWebUserIdentity() {
   const tgUser = getTelegramUser();
@@ -61,7 +60,6 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   const isDailyClaim = url === '/api/user/claim-daily' && method === 'POST';
   const isDailyStatus = url === '/api/user/profile' && method === 'GET';
   const isChatSend = url === '/api/chat/send' && method === 'POST';
-  const isImageGenerate = url === '/api/image/generate' && method === 'POST';
 
   const target = isSettingsRoute
     ? RUBYCHAN_SETTINGS_URL
@@ -71,9 +69,7 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
         ? `${RUBYCHAN_BALANCE_URL}?route=status`
         : isChatSend
           ? RUBYCHAN_CHAT_URL
-          : isImageGenerate
-            ? RUBYCHAN_IMAGE_URL
-            : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
+          : `${RUBYCHAN_API_URL}?path=${encodeURIComponent(url)}`;
 
   const response = await fetch(target, { ...options, headers });
 
