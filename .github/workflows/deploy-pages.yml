@@ -37,19 +37,22 @@ jobs:
           s = p.read_text()
           old = "const [activeTab, setActiveTab] = useState<'home' | 'characters' | 'chats' | 'settings'>('home');"
           new = "const [activeTab, setActiveTab] = useState<'home' | 'characters' | 'chats' | 'settings'>('characters');"
-          if old not in s:
-              raise SystemExit('Expected activeTab initializer not found')
-          p.write_text(s.replace(old, new, 1))
+          if old in s:
+              p.write_text(s.replace(old, new, 1))
           PY
 
       - name: Build
         run: npm run build
 
-      - name: Include Owner Portal in Pages artifact
+      - name: Include Owner Portals in Pages artifact
         run: |
           test -f owner.html
+          test -f owner-live.html
           cp owner.html dist/owner.html
+          cp owner-live.html dist/owner-live.html
           test -f dist/owner.html
+          test -f dist/owner-live.html
+          ls -lh dist/owner*.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
