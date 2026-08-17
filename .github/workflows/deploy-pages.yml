@@ -28,21 +28,17 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
-      - name: Fix Owner Dashboard visibility
-        run: |
-          sed -i 's/\.hidden{display:none}/.hidden{display:none!important}/g' public/owner/index.html
-          sed -i 's/\.hidden{display:none}/.hidden{display:none!important}/g' public/owner-final/index.html
-      - name: Include Owner Dashboard entries
+      - name: Include Owner Login and Platform
         run: |
           test -f public/owner/index.html
-          test -f public/owner-final/index.html
+          test -f public/owner/platform.html
           test -f owner.html
-          mkdir -p dist/owner dist/owner-final
+          mkdir -p dist/owner
           cp public/owner/index.html dist/owner/index.html
-          cp public/owner-final/index.html dist/owner-final/index.html
+          cp public/owner/platform.html dist/owner/platform.html
           cp owner.html dist/owner.html
           test -f dist/owner/index.html
-          test -f dist/owner-final/index.html
+          test -f dist/owner/platform.html
           test -f dist/owner.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
