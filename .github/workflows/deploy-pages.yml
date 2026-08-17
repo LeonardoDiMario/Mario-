@@ -30,11 +30,11 @@ jobs:
         run: npm run build
       - name: Include Owner Dashboard entries
         run: |
-          test -f public/owner/index.html
+          test -f public/owner-fixed/index.html
           test -f public/owner-final/index.html
           test -f owner.html
           mkdir -p dist/owner dist/owner-final
-          cp public/owner/index.html dist/owner/index.html
+          cp public/owner-fixed/index.html dist/owner/index.html
           cp public/owner-final/index.html dist/owner-final/index.html
           cp owner.html dist/owner.html
           test -f dist/owner/index.html
