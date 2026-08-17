@@ -28,13 +28,17 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: Fix Owner Dashboard visibility
+        run: |
+          sed -i 's/\.hidden{display:none}/.hidden{display:none!important}/g' public/owner/index.html
+          sed -i 's/\.hidden{display:none}/.hidden{display:none!important}/g' public/owner-final/index.html
       - name: Include Owner Dashboard entries
         run: |
-          test -f public/owner-fixed/index.html
+          test -f public/owner/index.html
           test -f public/owner-final/index.html
           test -f owner.html
           mkdir -p dist/owner dist/owner-final
-          cp public/owner-fixed/index.html dist/owner/index.html
+          cp public/owner/index.html dist/owner/index.html
           cp public/owner-final/index.html dist/owner-final/index.html
           cp owner.html dist/owner.html
           test -f dist/owner/index.html
