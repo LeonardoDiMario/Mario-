@@ -28,14 +28,17 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
-      - name: Include Owner Dashboard entry
+      - name: Include Owner Dashboard entries
         run: |
           test -f public/owner/index.html
+          test -f public/owner-final/index.html
           test -f owner.html
-          mkdir -p dist/owner
+          mkdir -p dist/owner dist/owner-final
           cp public/owner/index.html dist/owner/index.html
+          cp public/owner-final/index.html dist/owner-final/index.html
           cp owner.html dist/owner.html
           test -f dist/owner/index.html
+          test -f dist/owner-final/index.html
           test -f dist/owner.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
