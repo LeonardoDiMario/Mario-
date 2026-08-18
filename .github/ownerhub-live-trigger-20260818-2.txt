@@ -1,0 +1,1 @@
+Force Owner Hub live Pages deployment from the direct public/ownerhub template.
