@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RubyChan AI - Owner Control Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body { background-color: #0b0514; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .glass-card { background: rgba(24, 11, 40, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(225, 29, 72, 0.2); }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+  <div class="max-w-6xl mx-auto space-y-6">
+    <header class="glass-card rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-xl border-rose-900/40">
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-purple-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-rose-600/30">👑</div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-black bg-gradient-to-r from-rose-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">RubyChan AI Owner Portal</h1>
+          <p class="text-xs text-slate-400">Master Administration & Real-Time Telemetry</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/50 text-emerald-400 text-xs font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Online & Active</span>
+        <a href="https://t.me/RubbyChanbot" target="_blank" rel="noopener" class="px-4 py-2 bg-gradient-to-r from-rose-600 to-pink-600 text-white text-xs font-black rounded-xl shadow-lg flex items-center gap-2"><i class="fa-brands fa-telegram"></i> Open @RubbyChanbot</a>
+      </div>
+    </header>
+
+    <div class="flex flex-wrap gap-2 border-b border-rose-900/30 pb-3">
+      <button onclick="switchTab('stats')" id="tab-stats" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white">Platform Stats</button>
+      <button onclick="switchTab('users')" id="tab-users" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300">Users & Telegram Members</button>
+      <button onclick="switchTab('characters')" id="tab-characters" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300">AI Characters</button>
+      <button onclick="switchTab('broadcast')" id="tab-broadcast" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300">Broadcast Push</button>
+      <button onclick="switchTab('config')" id="tab-config" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300">System Config</button>
+    </div>
+
+    <div id="content-container">
+      <div id="loading" class="text-center py-12 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl text-rose-500 mb-2"></i><p class="text-xs">Loading Owner Data...</p></div>
+      <div id="view-stats" class="hidden space-y-6"></div>
+      <div id="view-users" class="hidden space-y-4"></div>
+      <div id="view-characters" class="hidden space-y-4"></div>
+      <div id="view-broadcast" class="hidden space-y-4"></div>
+      <div id="view-config" class="hidden space-y-4"></div>
+    </div>
+  </div>
+
+<script>
+const ADMIN_KEY='rubychan_admin_2026';
+const OWNER_API='https://rmmanieytszkfzdyrjvt.supabase.co/functions/v1/rubychan-owner-api-v3';
+let currentTab='stats';
+async function fetchApi(endpoint, options={}){const [path,query='']=endpoint.split('?');const u=new URL(OWNER_API);u.searchParams.set('route',path);if(query){for(const [k,v] of new URLSearchParams(query))u.searchParams.set(k,v)}const res=await fetch(u.toString(),{...options,headers:{'Content-Type':'application/json','x-admin-key':ADMIN_KEY,...(options.headers||{})}});const text=await res.text();let data;try{data=JSON.parse(text)}catch{throw new Error(`Owner API returned invalid response (${res.status}): ${text.slice(0,300)}`)}if(!res.ok)throw new Error(data.error||`Owner API HTTP ${res.status}`);return data}
+function switchTab(tab){currentTab=tab;document.querySelectorAll('.tab-btn').forEach(btn=>btn.className='tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300');document.getElementById('tab-'+tab).className='tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white';['stats','users','characters','broadcast','config'].forEach(t=>document.getElementById('view-'+t).classList.add('hidden'));document.getElementById('view-'+tab).classList.remove('hidden');loadCurrentTab()}
+async function loadCurrentTab(){document.getElementById('loading').classList.remove('hidden');try{if(currentTab==='stats')await loadStats();if(currentTab==='users')await loadUsers();if(currentTab==='characters')await loadCharacters();if(currentTab==='broadcast')await renderBroadcast();if(currentTab==='config')await loadConfig()}catch(err){console.error(err);alert('Owner API error: '+err.message)}finally{document.getElementById('loading').classList.add('hidden')}}
+async function loadStats(){const stats=(await fetchApi('/stats')).stats||{};document.getElementById('view-stats').innerHTML=`<div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div class="glass-card p-5 rounded-2xl"><p class="text-xs text-slate-400 font-bold mb-1">Total Users</p><p class="text-2xl font-black">${stats.totalUsers||0}</p></div><div class="glass-card p-5 rounded-2xl"><p class="text-xs text-slate-400 font-bold mb-1">Characters</p><p class="text-2xl font-black text-rose-300">🎭 ${stats.activeCharacters||0}</p></div><div class="glass-card p-5 rounded-2xl"><p class="text-xs text-slate-400 font-bold mb-1">Total Conversations</p><p class="text-2xl font-black text-purple-300">💬 ${stats.totalConversations||0}</p></div><div class="glass-card p-5 rounded-2xl"><p class="text-xs text-slate-400 font-bold mb-1">Total Messages</p><p class="text-2xl font-black text-pink-300">💬 ${stats.totalMessages||0}</p></div></div>`}
+async function loadUsers(){const data=await fetchApi('/users?limit=100');const users=Array.isArray(data)?data:(data.users||[]);const rows=users.map(u=>{const name=[u.first_name,u.last_name].filter(Boolean).join(' ')||u.username||'User';const tg=u.telegram_id||'';return `<tr class="border-b border-rose-900/20 hover:bg-rose-950/20 text-xs"><td class="p-3"><p class="font-extrabold text-white">${name}</p><span class="text-[10px] font-mono text-emerald-400">${tg?'🆔 '+tg:u.id||''}</span></td><td class="p-3">${(u.premium_plan||'Free').toUpperCase()}</td><td class="p-3 text-amber-300 font-bold">⚡ ${u.energy??50}</td><td class="p-3 text-rose-300 font-bold">💎 ${u.gems??0}</td><td class="p-3">${u.status||'active'}</td></tr>`}).join('');document.getElementById('view-users').innerHTML=`<div class="glass-card rounded-2xl overflow-hidden"><div class="p-4 border-b border-rose-900/30 flex justify-between items-center"><h3 class="font-extrabold text-sm">Registered Members & Telegram Users</h3><button onclick="loadUsers()" class="px-3 py-1.5 bg-rose-950 text-rose-200 border border-rose-700 text-xs rounded-xl font-bold">Refresh</button></div><table class="w-full text-left"><thead class="bg-[#12071f] text-slate-400 uppercase text-[10px] font-extrabold"><tr><th class="p-3">Member & Telegram ID</th><th class="p-3">Plan</th><th class="p-3">Energy</th><th class="p-3">Gems</th><th class="p-3">Status</th></tr></thead><tbody>${rows||'<tr><td colspan="5" class="p-6 text-center text-slate-500 text-xs">No member records found.</td></tr>'}</tbody></table></div>`}
+async function loadCharacters(){const data=await fetchApi('/characters');const chars=Array.isArray(data)?data:(data.characters||[]);const cards=chars.map(c=>`<div class="glass-card p-4 rounded-2xl border-rose-900/30 flex items-start space-x-3.5"><img src="${c.avatar||c.image_url||''}" class="w-14 h-14 rounded-2xl object-cover border border-rose-500/40 shrink-0" onerror="this.style.display='none'"/><div class="flex-1 min-w-0"><div class="flex items-center gap-1.5"><h4 class="font-extrabold text-sm text-white truncate">${c.name||''}</h4>${c.is_premium?'<span class="text-[9px] bg-rose-950 text-rose-300 px-1.5 py-0.2 rounded border border-rose-600/40 font-bold">18+ VIP</span>':''}</div><p class="text-[11px] text-rose-300 line-clamp-1 mb-1">${c.title||''}</p><p class="text-[10px] text-slate-400 line-clamp-2">${c.personality||''}</p></div></div>`).join('');document.getElementById('view-characters').innerHTML=`<div class="flex justify-between items-center"><h3 class="font-extrabold text-sm">AI Characters Platform Directory (${chars.length})</h3><a href="https://t.me/RubbyChanbot" target="_blank" rel="noopener" class="px-3 py-1.5 bg-rose-600 text-white text-xs rounded-xl font-bold">Open Telegram</a></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">${cards}</div>`}
+async function renderBroadcast(){document.getElementById('view-broadcast').innerHTML=`<div class="glass-card p-6 rounded-2xl space-y-4 max-w-2xl"><h3 class="font-extrabold text-sm">Send Telegram Push Broadcast</h3><p class="text-xs text-slate-400">Send an instant broadcast through @RubbyChanbot.</p><textarea id="bc-msg" rows="4" class="w-full bg-[#140a1f] border border-rose-900/40 rounded-xl p-3 text-xs text-white" placeholder="Type your broadcast message here..."></textarea><button onclick="sendBroadcast()" id="bc-btn" class="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white text-xs font-black rounded-xl"><i class="fa-solid fa-paper-plane mr-1.5"></i>Send Broadcast</button></div>`}
+async function sendBroadcast(){const msg=document.getElementById('bc-msg').value.trim();if(!msg)return alert('Please enter broadcast message text.');const btn=document.getElementById('bc-btn');btn.disabled=true;try{const res=await fetchApi('/broadcast',{method:'POST',body:JSON.stringify({message:msg})});alert(res.message||'Broadcast complete!');document.getElementById('bc-msg').value=''}catch(e){alert('Broadcast failed: '+e.message)}finally{btn.disabled=false}}
+async function loadConfig(){const data=await fetchApi('/system-config');const cfg=data.config||{};document.getElementById('view-config').innerHTML=`<div class="glass-card p-6 rounded-2xl space-y-4 max-w-2xl"><h3 class="font-extrabold text-sm">AI & Telegram Configuration</h3><div class="grid grid-cols-2 gap-4 text-xs"><div class="p-3 bg-[#12071f] rounded-xl"><p class="text-slate-400 font-bold mb-1">Telegram Bot</p><p class="text-rose-300 font-mono font-bold">${cfg.botUsername||'@RubbyChanbot'}</p></div><div class="p-3 bg-[#12071f] rounded-xl"><p class="text-slate-400 font-bold mb-1">Default AI Engine</p><p class="text-emerald-400 font-mono font-bold">${cfg.defaultModel||'gemini-3.1-flash-lite'}</p></div></div></div>`}
+loadCurrentTab();
+</script>
+</body></html>
