@@ -41,7 +41,7 @@ jobs:
         run: |
           rm -rf /tmp/ownerhub-src
           mkdir -p /tmp/ownerhub-src
-          base64 -d ownerhub-bundle.zip > /tmp/ownerhub-bundle-decoded.zip
+          base64 -d ownerhub-bundle.zip | base64 -d > /tmp/ownerhub-bundle-decoded.zip
           unzip -q /tmp/ownerhub-bundle-decoded.zip -d /tmp/ownerhub-src
           cd /tmp/ownerhub-src/ownerhub_connected
           npm install
@@ -49,7 +49,6 @@ jobs:
           test -f dist/index.html
           mkdir -p "$GITHUB_WORKSPACE/dist/ownerhub"
           cp -R dist/. "$GITHUB_WORKSPACE/dist/ownerhub/"
-          cp public/owner/index.html "$GITHUB_WORKSPACE/dist/ownerhub/index.html"
           test -f "$GITHUB_WORKSPACE/dist/ownerhub/index.html"
       - name: Setup Pages
         uses: actions/configure-pages@v5
