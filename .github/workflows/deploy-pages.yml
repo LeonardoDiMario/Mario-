@@ -43,25 +43,38 @@ jobs:
           mkdir -p /tmp/ownerhub-src
           python3 - <<'PY'
           from pathlib import Path
-          import base64
-          import io
-          import zipfile
+          import base64, io, zipfile
 
-          src = Path('ownerhub-bundle.zip').read_bytes()
-          candidates = [src]
-          for _ in range(2):
+          raw = Path('ownerhub-bundle.zip').read_text(encoding='utf-8').strip()
+          compact = ''.join(raw.split())
+          candidates = []
+          if compact.startswith('UEsDB'):
               try:
-                  nxt = base64.b64decode(candidates[-1], validate=True)
-                  candidates.append(nxt)
+                  candidates.append(base64.b64decode(compact, validate=True))
               except Exception:
-                  break
+                  pass
+          candidates.append(Path('ownerhub-bundle.zip').read_bytes())
 
-          for data in candidates:
-              if data.startswith(b'PK') and zipfile.is_zipfile(io.BytesIO(data)):
-                  Path('/tmp/ownerhub-bundle.zip').write_bytes(data)
+          decoded = None
+          for _ in range(2):
+              next_candidates = []
+              for data in candidates:
+                  if zipfile.is_zipfile(io.BytesIO(data)):
+                      decoded = data
+                      break
+                  try:
+                      text = data.decode('ascii')
+                      text = ''.join(text.split())
+                      next_candidates.append(base64.b64decode(text, validate=True))
+                  except Exception:
+                      pass
+              if decoded is not None:
                   break
-          else:
-              raise SystemExit('Owner Hub bundle is neither a ZIP nor a valid base64-encoded ZIP')
+              candidates = next_candidates
+
+          if decoded is None:
+              raise SystemExit('Owner Hub bundle is not a valid ZIP or base64-encoded ZIP')
+          Path('/tmp/ownerhub-bundle.zip').write_bytes(decoded)
           PY
           unzip -q /tmp/ownerhub-bundle.zip -d /tmp/ownerhub-src
           cd /tmp/ownerhub-src/ownerhub_connected
