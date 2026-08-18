@@ -37,53 +37,12 @@ jobs:
           cp public/owner/index.html dist/owner/index.html
           cp public/owner/platform.html dist/owner/platform.html
           cp owner.html dist/owner.html
-      - name: Build supplied Owner Hub template unchanged
+      - name: Include supplied Owner Hub template unchanged
         run: |
-          rm -rf /tmp/ownerhub-src /tmp/ownerhub-bundle.zip
-          mkdir -p /tmp/ownerhub-src
-          python3 - <<'PY'
-          from pathlib import Path
-          import base64, io, zipfile
-
-          raw = Path('ownerhub-bundle.zip').read_text(encoding='utf-8').strip()
-          compact = ''.join(raw.split())
-          candidates = []
-          if compact.startswith('UEsDB'):
-              try:
-                  candidates.append(base64.b64decode(compact, validate=True))
-              except Exception:
-                  pass
-          candidates.append(Path('ownerhub-bundle.zip').read_bytes())
-
-          decoded = None
-          for _ in range(2):
-              next_candidates = []
-              for data in candidates:
-                  if zipfile.is_zipfile(io.BytesIO(data)):
-                      decoded = data
-                      break
-                  try:
-                      text = data.decode('ascii')
-                      text = ''.join(text.split())
-                      next_candidates.append(base64.b64decode(text, validate=True))
-                  except Exception:
-                      pass
-              if decoded is not None:
-                  break
-              candidates = next_candidates
-
-          if decoded is None:
-              raise SystemExit('Owner Hub bundle is not a valid ZIP or base64-encoded ZIP')
-          Path('/tmp/ownerhub-bundle.zip').write_bytes(decoded)
-          PY
-          unzip -q /tmp/ownerhub-bundle.zip -d /tmp/ownerhub-src
-          cd /tmp/ownerhub-src/ownerhub_connected
-          npm install
-          npm run build
-          test -f dist/index.html
-          mkdir -p "$GITHUB_WORKSPACE/dist/ownerhub"
-          cp -R dist/. "$GITHUB_WORKSPACE/dist/ownerhub/"
-          test -f "$GITHUB_WORKSPACE/dist/ownerhub/index.html"
+          test -f public/ownerhub/index.html
+          mkdir -p dist/ownerhub
+          cp public/ownerhub/index.html dist/ownerhub/index.html
+          test -f dist/ownerhub/index.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
