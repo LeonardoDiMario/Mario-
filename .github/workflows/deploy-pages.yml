@@ -43,21 +43,19 @@ jobs:
           mkdir -p /tmp/ownerhub-src
           python3 - <<'PY'
           from pathlib import Path
-          import base64, zipfile
+          import base64, io, zipfile
 
           src = Path('ownerhub-bundle.zip').read_bytes()
           candidates = [src]
-          try:
-              candidates.append(base64.b64decode(src, validate=True))
-          except Exception:
-              pass
-          try:
-              candidates.append(base64.b64decode(candidates[-1], validate=True))
-          except Exception:
-              pass
+          for _ in range(2):
+              try:
+                  nxt = base64.b64decode(candidates[-1], validate=True)
+                  candidates.append(nxt)
+              except Exception:
+                  break
 
           for data in candidates:
-              if data[:4] == b'PK\\x03\\x04' and zipfile.is_zipfile(__import__('io').BytesIO(data)):
+              if data.startswith(b'PK\\x03\\x04') and zipfile.is_zipfile(io.BytesIO(data)):
                   Path('/tmp/ownerhub-bundle.zip').write_bytes(data)
                   break
           else:
