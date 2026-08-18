@@ -39,10 +39,31 @@ jobs:
           cp owner.html dist/owner.html
       - name: Build supplied Owner Hub template unchanged
         run: |
-          rm -rf /tmp/ownerhub-src
+          rm -rf /tmp/ownerhub-src /tmp/ownerhub-bundle.zip
           mkdir -p /tmp/ownerhub-src
-          base64 -d ownerhub-bundle.zip | base64 -d > /tmp/ownerhub-bundle-decoded.zip
-          unzip -q /tmp/ownerhub-bundle-decoded.zip -d /tmp/ownerhub-src
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, zipfile
+
+          src = Path('ownerhub-bundle.zip').read_bytes()
+          candidates = [src]
+          try:
+              candidates.append(base64.b64decode(src, validate=True))
+          except Exception:
+              pass
+          try:
+              candidates.append(base64.b64decode(candidates[-1], validate=True))
+          except Exception:
+              pass
+
+          for data in candidates:
+              if data[:4] == b'PK\\x03\\x04' and zipfile.is_zipfile(__import__('io').BytesIO(data)):
+                  Path('/tmp/ownerhub-bundle.zip').write_bytes(data)
+                  break
+          else:
+              raise SystemExit('Owner Hub bundle is neither a ZIP nor a valid base64-encoded ZIP')
+          PY
+          unzip -q /tmp/ownerhub-bundle.zip -d /tmp/ownerhub-src
           cd /tmp/ownerhub-src/ownerhub_connected
           npm install
           npm run build
