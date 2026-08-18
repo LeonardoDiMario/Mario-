@@ -43,7 +43,9 @@ jobs:
           mkdir -p /tmp/ownerhub-src
           python3 - <<'PY'
           from pathlib import Path
-          import base64, io, zipfile
+          import base64
+          import io
+          import zipfile
 
           src = Path('ownerhub-bundle.zip').read_bytes()
           candidates = [src]
@@ -55,7 +57,7 @@ jobs:
                   break
 
           for data in candidates:
-              if data.startswith(b'PK\\x03\\x04') and zipfile.is_zipfile(io.BytesIO(data)):
+              if data.startswith(b'PK') and zipfile.is_zipfile(io.BytesIO(data)):
                   Path('/tmp/ownerhub-bundle.zip').write_bytes(data)
                   break
           else:
