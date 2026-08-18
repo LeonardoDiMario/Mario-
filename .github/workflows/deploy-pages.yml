@@ -42,7 +42,9 @@ jobs:
           test -f public/ownerhub/index.html
           mkdir -p dist/ownerhub
           cp public/ownerhub/index.html dist/ownerhub/index.html
+          cp public/ownerhub/index.html dist/ownerhub.html
           test -f dist/ownerhub/index.html
+          test -f dist/ownerhub.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
