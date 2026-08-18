@@ -1,1 +1,1 @@
-Trigger Owner Hub Pages rebuild after bundle decode fix.
+Force a fresh Owner Hub Pages rebuild using the current ZIP/base64 detection workflow.
